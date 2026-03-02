@@ -1,67 +1,32 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/focal64"
   config.vm.network "private_network", ip: "192.168.56.30"
-  config.vm.network "public_network"
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = "1600"
-  end
+
   config.vm.provision "shell", inline: <<-SHELL
-  # Step 1: Update packages and install dependencies
-  sudo apt update
-  sudo apt install apache2 \
-    ghostscript \
-    libapache2-mod-php \
-    mysql-server \
-    php \
-    php-bcmath \
-    php-curl \
-    php-imagick \
-    php-intl \
-    php-json \
-    php-mbstring \
-    php-mysql \
-    php-xml \
-    php-zip -y
+    # Update and install Nginx
+    apt-get update
+    apt-get install -y nginx
 
-  # Step 2: Download WordPress
-  sudo mkdir -p /srv/www
-  sudo chown www-data: /srv/www
-  curl https://wordpress.org/latest.tar.gz | sudo -u www-data tar zx -C /srv/www
+    # Create a styled HTML page using cat <<EOF
+    cat <<EOF > /var/www/html/index.html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Adaeze's Nginx Assignment</title>
+    </head>
+    <body>
+            <h1>Hello! 👋</h1>
+            <h2>My name is Adaeze Anigbata</h2>
+            <p>I am a student of the she code scholarship program - cohort 3.</p>
+            <p> I am learning DevOps Engineering </p>
+            <p>This simple HTML page is being served by an automated <strong>Nginx</strong> web server.</p>
+    </body>
+    </html>
+EOF
 
-  # Step 3: Configure Apache
-  cat > /etc/apache2/sites-available/wordpress.conf <<EOF
-  <VirtualHost *:80>
-      DocumentRoot /srv/www/wordpress
-      <Directory /srv/www/wordpress>
-          Options FollowSymLinks
-          AllowOverride Limit Options FileInfo
-          DirectoryIndex index.php
-          Require all granted
-      </Directory>
-      <Directory /srv/www/wordpress/wp-content>
-          Options FollowSymLinks
-          Require all granted
-      </Directory>
-  </VirtualHost>
-  EOF
-  sudo a2ensite wordpress
-  sudo a2enmod rewrite
-  sudo a2dissite 000-default
-
-  # Step 4: Set up MySQL database
-  mysql -u root -e 'CREATE DATABASE wordpress;'
-  mysql -u root -e 'CREATE USER wordpress@localhost IDENTIFIED BY "admin123";'
-  mysql -u root -e 'GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER ON wordpress.* TO wordpress@localhost;'
-  mysql -u root -e 'FLUSH PRIVILEGES;'
-
-  # Step 5: Configure WordPress
-  sudo -u www-data cp /srv/www/wordpress/wp-config-sample.php /srv/www/wordpress/wp-config.php
-  sudo -u www-data sed -i 's/database_name_here/wordpress/' /srv/www/wordpress/wp-config.php
-  sudo -u www-data sed -i 's/username_here/wordpress/' /srv/www/wordpress/wp-config.php
-  sudo -u www-data sed -i 's/password_here/admin123/' /srv/www/wordpress/wp-config.php
-
-  # Step 6: Restart services
-  systemctl restart mysql
-  systemctl restart apache2
+    # Restart Nginx to serve the new page
+    systemctl restart nginx
   SHELL
 end
